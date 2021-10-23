@@ -55,7 +55,7 @@ done = False
 # List of vertices
 vertices = []
 # Selected vertex
-selectedVertex = None
+selection = None
 clickedVertex = None
 # List of edges
 edges = []
@@ -65,36 +65,43 @@ while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            if selectedVertex is None:
-                # If the user clicks on the screen, but not on a vertex, this creates a new vertex
-                vertices.append(Vertex(event.pos[0], event.pos[1]))
-                selectedVertex = vertices[-1]
-                selectedVertex.selected = True
-            # If the user clicks on a vertex, this connects the vertex to the selected vertex
-            for v in vertices:
-                if v is not selectedVertex:
-                    if v.contains(event.pos[0], event.pos[1]):
-                        if selectedVertex and v.selected == False:
-                            selectedVertex.connect(v)
-                            edges.append(Edge(selectedVertex, v))
-                        else:
-                            selectedVertex = v
-                            selectedVertex.selected = True
-                        break
 
-        elif event.type == pygame.MOUSEBUTTONUP:
+        elif selection is not None:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if selection.__class__ == Vertex:
+                    for v in vertices:
+                        if v is not selection:
+                            if v.contains(event.pos[0], event.pos[1]):
+                                if selection and v.selected == False:
+                                    selection.connect(v)
+                                    edges.append(Edge(selection, v))
+                                    """ selection.selected = False
+                                    selection = None """
+                            #break
+                    selection.selected = False
+                    selection = None
+                    
+        elif selection is None:
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                for v in vertices:
+                        if v.contains(event.pos[0], event.pos[1]):
+                            selection = v
+                            selection.selected = True
+                if selection is None:
+                    vertices.append(Vertex(event.pos[0], event.pos[1]))
+                    selection = vertices[-1]
+                    selection.selected = True
+            """         elif event.type == pygame.MOUSEBUTTONUP:
             # If the user clicks on the screen, but not on a vertex, this deselects the selected vertex
-            if selectedVertex is not None:
-                if not selectedVertex.contains(event.pos[0], event.pos[1]):
-                    selectedVertex.selected = False
-                    selectedVertex = None
-
+            if selection is not None:
+                if not selection.contains(event.pos[0], event.pos[1]):
+                    selection.selected = False
+                    selection = None """
         elif event.type == pygame.MOUSEMOTION and pygame.mouse.get_pressed()[0] == 1:
             # If the user is dragging a vertex, this moves the vertex
-            if selectedVertex is not None:
-                selectedVertex.x = event.pos[0]
-                selectedVertex.y = event.pos[1]
+            if selection is not None:
+                selection.x = event.pos[0]
+                selection.y = event.pos[1]
     screen.fill((0,0,0))
     for v in vertices:
         v.draw()
