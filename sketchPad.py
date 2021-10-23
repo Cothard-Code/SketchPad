@@ -41,10 +41,21 @@ class Edge:
     def __init__(self, v1, v2):
         self.v1 = v1
         self.v2 = v2
+        self.width = 8
+        self.selected = False
         self.draw()
 
     def draw(self):
-        pygame.draw.line(screen, (255, 255, 255), (self.v1.x, self.v1.y), (self.v2.x, self.v2.y))
+        if self.selected:
+            pygame.draw.line(screen, (155,0,0), (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width + 3)
+        pygame.draw.line(screen, (155,155,155), (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width)
+
+    def contains(self, x, y):
+        # Check if the point is within the line segment
+        m = (self.v2.y - self.v1.y) / (self.v2.x - self.v1.x)
+        b = self.v1.y - m * self.v1.x
+        y_intercept = m * x + b
+        return abs(y_intercept - y) <= self.width
 
     def __repr__(self):
         return "Edge between {} and {}".format(self.v1, self.v2)
@@ -56,7 +67,6 @@ done = False
 vertices = []
 # Selected vertex
 selection = None
-clickedVertex = None
 # List of edges
 edges = []
 
@@ -66,6 +76,20 @@ while not done:
         if event.type == pygame.QUIT:
             done = True
 
+        # If the delete key is pressed, check if the selection is a vertex or an edge, and delete it
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_DELETE:
+                if selection is not None:
+                    if isinstance(selection, Vertex):
+                        # Delete the vertex and all edges connected to it
+                        for edge in selection.connections:
+                            edges.remove(edge)
+                        vertices.remove(selection)
+                    elif isinstance(selection, Edge):
+                        selection.v1.connections.remove(selection.v2)
+                        selection.v2.connections.remove(selection.v1)
+                        edges.remove(selection)
+                    selection = None
         elif event.type == pygame.MOUSEMOTION and pygame.mouse.get_pressed()[0] == 1:
             # If the user is dragging a vertex, this moves the vertex
             if selection is not None:
@@ -73,7 +97,7 @@ while not done:
                 selection.y = event.pos[1]
         elif selection is not None:
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if selection.__class__ == Vertex:
+                if isinstance(selection, Vertex):
                     for v in vertices:
                         if v is not selection:
                             if v.contains(event.pos[0], event.pos[1]):
@@ -85,12 +109,21 @@ while not done:
                             #break
                     selection.selected = False
                     selection = None
+                elif isinstance(selection, Edge):
+                    selection.selected = False
+                    selection = None
+                
                     
         elif selection is None:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 for v in vertices:
-                        if v.contains(event.pos[0], event.pos[1]):
-                            selection = v
+                    if v.contains(event.pos[0], event.pos[1]):
+                        selection = v
+                        selection.selected = True
+                if selection is None:
+                    for e in edges:
+                        if e.contains(event.pos[0], event.pos[1]):
+                            selection = e
                             selection.selected = True
                 if selection is None:
                     vertices.append(Vertex(event.pos[0], event.pos[1]))
@@ -104,10 +137,11 @@ while not done:
                     selection = None """
         
     screen.fill((0,0,0))
-    for v in vertices:
-        v.draw()
     for e in edges:
         e.draw()
+    for v in vertices:
+        v.draw()
+    
     pygame.display.flip()
     clock.tick(60)
 
