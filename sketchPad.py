@@ -66,6 +66,11 @@ while not done:
         if event.type == pygame.QUIT:
             done = True
 
+        elif event.type == pygame.MOUSEMOTION and pygame.mouse.get_pressed()[0] == 1:
+            # If the user is dragging a vertex, this moves the vertex
+            if selection is not None:
+                selection.x = event.pos[0]
+                selection.y = event.pos[1]
         elif selection is not None:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if selection.__class__ == Vertex:
@@ -97,11 +102,7 @@ while not done:
                 if not selection.contains(event.pos[0], event.pos[1]):
                     selection.selected = False
                     selection = None """
-        elif event.type == pygame.MOUSEMOTION and pygame.mouse.get_pressed()[0] == 1:
-            # If the user is dragging a vertex, this moves the vertex
-            if selection is not None:
-                selection.x = event.pos[0]
-                selection.y = event.pos[1]
+        
     screen.fill((0,0,0))
     for v in vertices:
         v.draw()
