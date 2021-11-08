@@ -115,6 +115,33 @@ class Arc:
     def __repr__(self):
         return "Arc between {} and {}".format(self.v1, self.v2)
 
+# A class that represents an arc that connects a vertex to itself
+class SelfArc:
+    def __init__(self, v):
+        self.v = v
+        self.v.ID = v.ID
+        self.width = 5
+        self.selected = False
+        self.draw()
+
+    def draw(self):
+        # Update v from the vertex
+        self.v = vertices[self.v.ID]
+        x = self.v.x
+        y = self.v.y
+        # Draw the arc such that the full circle is drawn
+        pygame.draw.arc(screen, (155,155,155), (x, y, 50, 50), 0, math.pi * 2, self.width)
+
+    def contains(self, x, y):
+        # Check if the point is within the arc
+        m = 0
+        b = self.v.y
+        y_intercept = m * x + b
+        return abs(y_intercept - y) <= self.width
+
+    def __repr__(self):
+        return "SelfArc at {}".format(self.v)
+
 # Function to rearrange the vertices so that they are more evenly spaced
 def arrangeVertices(vertices):
     # Find the center of the polygon
@@ -217,7 +244,7 @@ while not done:
                 selection.x = event.pos[0]
                 selection.y = event.pos[1]
         elif selection is not None:
-            if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 if isinstance(selection, Vertex):
                     for v in vertices:
                         if v is not selection:
@@ -233,7 +260,14 @@ while not done:
                 elif isinstance(selection, Edge):
                     selection.selected = False
                     selection = None
-                
+            # If the current selection is a vertex, and the user right clicks it, create a self arc
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+                if isinstance(selection, Vertex):
+                    if selection.contains(event.pos[0], event.pos[1]):
+                        selection.connect(selection)
+                        edges.append(SelfArc(selection))
+                        selection.selected = False
+                        selection = None
                     
         elif selection is None:
             if event.type == pygame.MOUSEBUTTONDOWN:
