@@ -186,8 +186,6 @@ while not done:
                         # Delete the edge and clear the connections of the vertices it connects
                         for vert in selection.v1.connections:
                             vert.connections.remove(selection.v2)
-                        #selection.v1.connections.remove(selection.v2)
-                        #selection.v2.connections.remove(selection.v1)
                         edges.remove(selection)
                     selection = None
             # If enter key pressed and a vertex is selected, update the reachable vertices
