@@ -190,10 +190,14 @@ colors = [(155,0,0), (0, 155, 0), (0, 0, 155), (155, 155, 0), (155, 0, 155), (0,
 currColor = 0
 # List of vertices
 vertices = []
-# List of reachable
-currReachable = []
-# Selected vertex
+# Selection
 selection = None
+# Selected vertex
+selectedVertex = None
+# List of reachable from the selected vertex
+currReachable = []
+# Degree of the selected vertex
+currDegree = -1
 # List of edges
 edges = []
 # List of components
@@ -229,13 +233,19 @@ while not done:
                             vert.connections.remove(selection.v2)
                         edges.remove(selection)
                     selection = None
-            # If the L Keyis pressed and a vertex is selected, create a self loop
+            # If the L key is pressed and a vertex is selected, create a self loop
             elif event.key == pygame.K_l:
                 if isinstance(selection, Vertex):
-                    selection.connect(selection)
-                    edges.append(Edge(selection, selection))
-                    selection.selected = False
-                    selection = None
+                    # Check if the vertex already has a self loop
+                    alreadyLooped = False
+                    for v in selection.connections:
+                        if v == selection:
+                            alreadyLooped = True
+                    if not alreadyLooped:
+                        selection.connect(selection)
+                        edges.append(Edge(selection, selection))
+                        selection.selected = False
+                        selection = None
             # If enter key pressed and a vertex is selected, update the reachable vertices
             elif event.key == pygame.K_KP_ENTER or event.key == pygame.K_RETURN:
                 if isinstance(selection, Vertex):
@@ -322,9 +332,18 @@ while not done:
     # Display the number of edges as "m = number" in the top right corner
     eCount = font.render("m = {}".format(len(edges)), True, (255,255,255))
     screen.blit(eCount, (screen.get_width() - eCount.get_width() - 10, 30))
+    # If the user has selected a vertex, display the vertex's ID as "Vertex ID = number" in the top right corner. If the user has selected an edge, display the edge's ID as "Edge between v1 and v2". If the user has selected nothing, display "Selection Empty."
+    if selection is not None:
+        if isinstance(selection, Vertex):
+            sDisplay = font.render("Vertex ID = {}".format(selection.ID), True, (255,255,255))
+        elif isinstance(selection, Edge):
+            sDisplay = font.render("Edge between v{} and v{}".format(selection.v1.ID, selection.v2.ID), True, (255,255,255))
+    else:
+        sDisplay = font.render("Selection Empty", True, (255,255,255))
+    screen.blit(sDisplay, (screen.get_width() - sDisplay.get_width() - 10, 50))
     # Display the result of the getReachableVertices function in the top right corner
     reachableCount = font.render("Reachable: {}".format(currReachable), True, (255,255,255))
-    screen.blit(reachableCount, (screen.get_width() - reachableCount.get_width() - 40, 50))
+    screen.blit(reachableCount, (screen.get_width() - reachableCount.get_width() - 40, 70))
 
     
     pygame.display.flip()
