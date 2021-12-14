@@ -192,12 +192,10 @@ currColor = 0
 vertices = []
 # Selection
 selection = None
-# Selected vertex
-selectedVertex = None
 # List of reachable from the selected vertex
 currReachable = []
 # Degree of the selected vertex
-currDegree = -1
+currDegree = 0
 # List of edges
 edges = []
 # List of components
@@ -281,8 +279,10 @@ while not done:
                         if v is not selection:
                             if v.contains(event.pos[0], event.pos[1]):
                                 if selection and v.selected == False:
-                                    selection.connect(v)
-                                    edges.append(Edge(selection, v))
+                                    # If the vertex is not already connected to the selected vertex, connect them
+                                    if v not in selection.connections:
+                                        selection.connect(v)
+                                        edges.append(Edge(selection, v))
                                     """ selection.selected = False
                                     selection = None """
                             #break
@@ -341,9 +341,13 @@ while not done:
     else:
         sDisplay = font.render("Selection Empty", True, (255,255,255))
     screen.blit(sDisplay, (screen.get_width() - sDisplay.get_width() - 10, 50))
+    # If the user has selected a vertex, display the degree of the selected vertex as "Degree = number" in the top right corner
+    if selection is not None and isinstance(selection, Vertex):
+        vDeg = font.render("Degree = {}".format(len(selection.connections)), True, (255,255,255))
+        screen.blit(vDeg, (screen.get_width() - vDeg.get_width() - 10, 70))
     # Display the result of the getReachableVertices function in the top right corner
     reachableCount = font.render("Reachable: {}".format(currReachable), True, (255,255,255))
-    screen.blit(reachableCount, (screen.get_width() - reachableCount.get_width() - 40, 70))
+    screen.blit(reachableCount, (screen.get_width() - reachableCount.get_width() - 40, 90))
 
     
     pygame.display.flip()
