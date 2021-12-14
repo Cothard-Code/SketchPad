@@ -50,23 +50,36 @@ class Edge:
         self.v2 = v2
         self.width = 8
         self.selected = False
+        # self.isLoop is true if self.v1 == self.v2
+        self.isLoop = self.v1 == self.v2
         self.draw()
 
     def draw(self):
-        if self.selected:
-            pygame.draw.line(screen, (255,255,255), (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width + 2)
-        pygame.draw.line(screen, (155,155,155), (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width)
-
+        if self.isLoop:
+            if self.selected:
+                pygame.draw.circle(screen, (255,255,255), (self.v1.x, self.v1.y - 1.5*self.v1.r), 1.35*self.v1.r, math.floor(self.width/1.25 + 5))
+            pygame.draw.circle(screen, (155,155,155), (self.v1.x, self.v1.y - 1.5*self.v1.r), 1.25*self.v1.r, math.floor(self.width/1.25))
+        else:
+            if self.selected:
+                pygame.draw.line(screen, (255,255,255), (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width + 2)
+            pygame.draw.line(screen, (155,155,155), (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width)
+        
     def contains(self, x, y):
-        # Check if the point is within the line segment
-        m = (self.v2.y - self.v1.y) / (self.v2.x - self.v1.x)
-        b = self.v1.y - m * self.v1.x
-        y_intercept = m * x + b
-        return abs(y_intercept - y) <= self.width
+        # If self.isLoop, check if the point is on the circle
+        if self.isLoop:
+            dist = math.sqrt((self.v1.x - x)**2 + (self.v1.y - y - 1.5 * self.v1.r)**2)
+            return dist >= self.v1.r and dist <= 1.25*self.v1.r
+            
+        # If not self.isLoop, check if the point is on the line
+        else:
+            m = (self.v2.y - self.v1.y) / (self.v2.x - self.v1.x)
+            b = self.v1.y - m * self.v1.x
+            y_intercept = m * x + b
+            return abs(y_intercept - y) <= self.width
 
     def __repr__(self):
         return "Edge between {} and {}".format(self.v1, self.v2)
-
+""" 
 # A similar class to Edge but it uses arcs instead of lines
 class Arc:
     def __init__(self, v1, v2):
@@ -113,8 +126,8 @@ class Arc:
         return abs(y_intercept - y) <= self.width
 
     def __repr__(self):
-        return "Arc between {} and {}".format(self.v1, self.v2)
-
+        return "Arc between {} and {}".format(self.v1, self.v2) """
+""" 
 # A class that represents an arc that connects a vertex to itself
 class SelfArc:
     def __init__(self, v):
@@ -141,6 +154,7 @@ class SelfArc:
 
     def __repr__(self):
         return "SelfArc at {}".format(self.v)
+ """
 
 # Function to rearrange the vertices so that they are more evenly spaced
 def arrangeVertices(vertices):
@@ -215,8 +229,15 @@ while not done:
                             vert.connections.remove(selection.v2)
                         edges.remove(selection)
                     selection = None
+            # If the L Keyis pressed and a vertex is selected, create a self loop
+            elif event.key == pygame.K_l:
+                if isinstance(selection, Vertex):
+                    selection.connect(selection)
+                    edges.append(Edge(selection, selection))
+                    selection.selected = False
+                    selection = None
             # If enter key pressed and a vertex is selected, update the reachable vertices
-            if event.key == pygame.K_KP_ENTER or event.key == pygame.K_RETURN:
+            elif event.key == pygame.K_KP_ENTER or event.key == pygame.K_RETURN:
                 if isinstance(selection, Vertex):
                     currReachable = []
                     currReachable = getReachableVertices(selection, currReachable)
@@ -260,15 +281,13 @@ while not done:
                 elif isinstance(selection, Edge):
                     selection.selected = False
                     selection = None
-            # If the current selection is a vertex, and the user right clicks it, create a self arc
-            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+            """ # If the current selection is a vertex, and the user presses the L Key, create a self loop
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_l:
                 if isinstance(selection, Vertex):
-                    if selection.contains(event.pos[0], event.pos[1]):
-                        selection.connect(selection)
-                        edges.append(SelfArc(selection))
-                        selection.selected = False
-                        selection = None
-                    
+                    selection.connect(selection)
+                    edges.append(Edge(selection))
+                    selection.selected = False
+                    selection = None """
         elif selection is None:
             if event.type == pygame.MOUSEBUTTONDOWN:
                 for v in vertices:
