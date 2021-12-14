@@ -69,13 +69,13 @@ class Edge:
         if self.isLoop:
             dist = math.sqrt((self.v1.x - x)**2 + (self.v1.y - y - 1.5 * self.v1.r)**2)
             return dist >= self.v1.r and dist <= 1.25*self.v1.r
-            
+
         # If not self.isLoop, check if the point is on the line
         else:
             m = (self.v2.y - self.v1.y) / (self.v2.x - self.v1.x)
             b = self.v1.y - m * self.v1.x
             y_intercept = m * x + b
-            return abs(y_intercept - y) <= self.width
+            return abs(y_intercept - y) <= self.width and x >= min(self.v1.x, self.v2.x) and x <= max(self.v1.x, self.v2.x)
 
     def __repr__(self):
         return "Edge between {} and {}".format(self.v1, self.v2)
@@ -269,37 +269,28 @@ while not done:
                     selection.color = colors[currColor]
         elif event.type == pygame.MOUSEMOTION and pygame.mouse.get_pressed()[0] == 1:
             # If the user is dragging a vertex, this moves the vertex
-            if selection is not None:
+            if isinstance(selection, Vertex):
                 selection.x = event.pos[0]
                 selection.y = event.pos[1]
-        elif selection is not None:
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                if isinstance(selection, Vertex):
-                    for v in vertices:
-                        if v is not selection:
-                            if v.contains(event.pos[0], event.pos[1]):
-                                if selection and v.selected == False:
-                                    # If the vertex is not already connected to the selected vertex, connect them
-                                    if v not in selection.connections:
-                                        selection.connect(v)
-                                        edges.append(Edge(selection, v))
-                                    """ selection.selected = False
-                                    selection = None """
-                            #break
-                    selection.selected = False
-                    selection = None
-                elif isinstance(selection, Edge):
-                    selection.selected = False
-                    selection = None
-            """ # If the current selection is a vertex, and the user presses the L Key, create a self loop
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_l:
-                if isinstance(selection, Vertex):
-                    selection.connect(selection)
-                    edges.append(Edge(selection))
-                    selection.selected = False
-                    selection = None """
-        elif selection is None:
-            if event.type == pygame.MOUSEBUTTONDOWN:
+        elif event.type == pygame.MOUSEBUTTONDOWN:
+            if isinstance(selection, Vertex):
+                for v in vertices:
+                    if v is not selection:
+                        if v.contains(event.pos[0], event.pos[1]):
+                            if selection and v.selected == False:
+                                # If the vertex is not already connected to the selected vertex, connect them
+                                if v not in selection.connections:
+                                    selection.connect(v)
+                                    edges.append(Edge(selection, v))
+                                """ selection.selected = False
+                                selection = None """
+                        #break
+                selection.selected = False
+                selection = None
+            elif isinstance(selection, Edge):
+                selection.selected = False
+                selection = None
+            else:
                 for v in vertices:
                     if v.contains(event.pos[0], event.pos[1]):
                         selection = v
@@ -313,12 +304,6 @@ while not done:
                     vertices.append(Vertex(event.pos[0], event.pos[1]))
                     selection = vertices[-1]
                     selection.selected = True
-            """         elif event.type == pygame.MOUSEBUTTONUP:
-            # If the user clicks on the screen, but not on a vertex, this deselects the selected vertex
-            if selection is not None:
-                if not selection.contains(event.pos[0], event.pos[1]):
-                    selection.selected = False
-                    selection = None """
         
     screen.fill((0,0,0))
     for e in edges:
@@ -329,22 +314,27 @@ while not done:
     # Display the number of vertices as "n = number" in the top right corner
     vCount = font.render("n = {}".format(len(vertices)), True, (255,255,255))
     screen.blit(vCount, (screen.get_width() - vCount.get_width() - 10, 10))
+
     # Display the number of edges as "m = number" in the top right corner
     eCount = font.render("m = {}".format(len(edges)), True, (255,255,255))
     screen.blit(eCount, (screen.get_width() - eCount.get_width() - 10, 30))
-    # If the user has selected a vertex, display the vertex's ID as "Vertex ID = number" in the top right corner. If the user has selected an edge, display the edge's ID as "Edge between v1 and v2". If the user has selected nothing, display "Selection Empty."
-    if selection is not None:
-        if isinstance(selection, Vertex):
-            sDisplay = font.render("Vertex ID = {}".format(selection.ID), True, (255,255,255))
-        elif isinstance(selection, Edge):
-            sDisplay = font.render("Edge between v{} and v{}".format(selection.v1.ID, selection.v2.ID), True, (255,255,255))
+
+    # If the user has selected a vertex, display the vertex's ID as "Vertex ID = number" in the top right corner.
+    # If the user has selected an edge, display the edge's ID as "Edge between v1 and v2".
+    # If the user has selected nothing, display "Selection Empty."
+    if isinstance(selection, Vertex):
+        sDisplay = font.render("Vertex ID = {}".format(selection.ID), True, (255,255,255))
+    elif isinstance(selection, Edge):
+        sDisplay = font.render("Edge between v{} and v{}".format(selection.v1.ID, selection.v2.ID), True, (255,255,255))
     else:
         sDisplay = font.render("Selection Empty", True, (255,255,255))
     screen.blit(sDisplay, (screen.get_width() - sDisplay.get_width() - 10, 50))
+
     # If the user has selected a vertex, display the degree of the selected vertex as "Degree = number" in the top right corner
-    if selection is not None and isinstance(selection, Vertex):
+    if isinstance(selection, Vertex):
         vDeg = font.render("Degree = {}".format(len(selection.connections)), True, (255,255,255))
         screen.blit(vDeg, (screen.get_width() - vDeg.get_width() - 10, 70))
+
     # Display the result of the getReachableVertices function in the top right corner
     reachableCount = font.render("Reachable: {}".format(currReachable), True, (255,255,255))
     screen.blit(reachableCount, (screen.get_width() - reachableCount.get_width() - 40, 90))
