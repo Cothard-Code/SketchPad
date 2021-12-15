@@ -49,20 +49,27 @@ class Edge:
         # self.ID is composed of the IDs of the vertices from smallest to largest
         self.ID = "{} {}".format(min(v1.ID, v2.ID), max(v1.ID, v2.ID))
         self.width = 8
+        self.color = (155,155,155)
         self.selected = False
         # self.isLoop is true if self.v1 == self.v2
         self.isLoop = self.v1 == self.v2
+        self.isBridge = False
         self.draw()
 
     def draw(self):
         if self.isLoop:
             if self.selected:
                 pygame.draw.circle(screen, (255,255,255), (self.v1.x, self.v1.y - 1.5*self.v1.r), 1.35*self.v1.r, math.floor(self.width/1.25 + 5))
-            pygame.draw.circle(screen, (155,155,155), (self.v1.x, self.v1.y - 1.5*self.v1.r), 1.25*self.v1.r, math.floor(self.width/1.25))
+            pygame.draw.circle(screen, self.color, (self.v1.x, self.v1.y - 1.5*self.v1.r), 1.25*self.v1.r, math.floor(self.width/1.25))
         else:
             if self.selected:
                 pygame.draw.line(screen, (255,255,255), (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width + 2)
-            pygame.draw.line(screen, (155,155,155), (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width)
+            pygame.draw.line(screen, self.color, (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width)
+
+            # if self.isBridge:
+            #     pygame.draw.line(screen, (0,200,100), (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width)
+            # else:
+            #     pygame.draw.line(screen, self.color, (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width)
         
     def contains(self, x, y):
         # If self.isLoop, check if the point is on the circle
@@ -72,10 +79,21 @@ class Edge:
 
         # If not self.isLoop, check if the point is on the line
         else:
-            m = (self.v2.y - self.v1.y) / (self.v2.x - self.v1.x)
-            b = self.v1.y - m * self.v1.x
-            y_intercept = m * x + b
-            return abs(y_intercept - y) <= self.width and x >= min(self.v1.x, self.v2.x) and x <= max(self.v1.x, self.v2.x)
+            # Catch divide by zero error
+            # Catch the case where the line is vertical
+            try:
+                m = (self.v2.y - self.v1.y) / (self.v2.x - self.v1.x)
+                b = self.v1.y - m * self.v1.x
+                y_intercept = m * x + b
+                return abs(y_intercept - y) <= self.width and x >= min(self.v1.x, self.v2.x) and x <= max(self.v1.x, self.v2.x)
+            except ZeroDivisionError:
+                m = (self.v2.y - self.v1.y) / (self.v2.x - self.v1.x + 0.00001)
+                b = self.v1.y - m * self.v1.x
+                y_intercept = m * x + b
+                return abs(y_intercept - y) <= self.width and x >= min(self.v1.x, self.v2.x) and x <= max(self.v1.x, self.v2.x)
+
+    def setIsBridge(self, bool):
+        self.isBridge = bool
 
     def __repr__(self):
         return "Edge between {} and {}".format(self.v1, self.v2)
@@ -101,6 +119,17 @@ def dfs(v, visited, c):
         elif e.v2 == v and e.v1 not in visited:
             dfs(e.v1, visited, c)
 
+
+
+""" def dfsBridges(v, bridges, c):
+    #add v to bridges set
+    bridges.append(v)
+    c.append(v)
+    for e in edges:
+        if e.v1 == v and e.v2 not in bridges:
+            dfs(e.v2, bridges, c)
+        elif e.v2 == v and e.v1 not in bridges:
+            dfs(e.v1, bridges, c) """
 
 # Function to determine if the graph can be divided into two partitions, and return them
 def getPartitions(vertices, edges):
@@ -148,6 +177,39 @@ def isBipartite(vertices, edges):
         return False
     return len(partition1) > 0 and len(partition2) > 0
 
+# Function to identify edges that are bridges
+# If an edge is removed, and the numComponents increases, then that edge is a bridge
+# Identify the bridges set their isBridge attribute to True
+""" def findBridges(vertices, edges):
+    bridgesI = []
+    for e in edges:
+        e.isBridge = False
+    for v in vertices:
+        v.visited = False
+    for v in vertices:
+        if not v.visited:
+            c = []
+            dfsBridges(v, bridgesI, c)
+            bridgesI.append(c)
+    print(bridgesI)
+    return bridgesI """
+""" def getBridges(vertices, edges, numComponents):
+    # Make temporary copy of the edges
+    tempEdges = edges.copy()
+    for e in tempEdges:
+        tempEdges.remove(e)
+        if numComponents < len(connectedComponents(vertices, tempEdges)):
+            e.isBridge = True
+        elif e.isBridge:
+            e.isBridge = False
+        tempEdges.append(e)
+    return tempEdges
+
+def checkBridge(tempEdges, vertices, numComponents):
+    if len(connectedComponents(vertices, tempEdges)) > numComponents:
+        return True
+    return False """
+
 isRunning = True
 done = False
 font = pygame.font.SysFont("arial", 20)
@@ -162,10 +224,14 @@ selection = None
 edges = []
 # List of connected components
 componentsList = []
+# Number of connected components
+numComponents = 0
 # Current Partitions
 partitionsCurr = []
 # Bipartite Flag
 bipartiteFlag = False
+# List of bridges
+bridgesList = []
 
 # Main loop
 while not done:
@@ -264,7 +330,7 @@ while not done:
                     vertices.append(Vertex(event.pos[0], event.pos[1]))
                     selection = vertices[-1]
                     selection.selected = True
-        
+
     screen.fill((0,0,0))
     for e in edges:
         e.draw()
@@ -316,10 +382,26 @@ while not done:
 
 
     # Display the result of connectedComponents function in the top left corner
+    # and the number of CCs
     if len(vertices) > 0:
         componentsList = connectedComponents(vertices, edges)
-        ccCount = font.render("Connected Components: {}".format(componentsList), True, (255,255,255))
-        screen.blit(ccCount, (10, 10))
+        numComponents = len(componentsList)
+        ccTitle = font.render("List of Connected Components:", True, (255,255,255))
+        ccList = font.render("{}".format(componentsList), True, (255,255,255))
+        ccNum = font.render("Number of CCs: {}".format(numComponents), True, (255,255,255))
+        screen.blit(ccTitle, (10, 10))
+        screen.blit(ccList, (10, 30))
+        screen.blit(ccNum, (10, 50))
+
+    """ for e in edges:
+        tempEdges = edges.copy()
+        tempEdges.remove(e)
+        if checkBridge(tempEdges, vertices, numComponents):
+            e.self.color = (0, 200, 150)
+        else:
+            e.self.color = (0, 0, 0)
+ """
+ 
 
     pygame.display.flip()
     clock.tick(60)
