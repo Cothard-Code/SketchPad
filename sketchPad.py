@@ -404,12 +404,12 @@ while not done:
             # if the user pressed ctrl+s, save the graph
             if event.key == pygame.K_s and pygame.key.get_mods() & pygame.KMOD_CTRL:
                 # Prompt the user for a filename
-                filename = input("Enter a filename: ")
+                filename = input("Enter a filename to save: ")
                 saveGraph(vertices, edges, filename)
             # if the user pressed ctrl+o, load a graph
             elif event.key == pygame.K_o and pygame.key.get_mods() & pygame.KMOD_CTRL:
                 # Prompt the user for a filename
-                filename = input("Enter a filename: ")
+                filename = input("Enter a filename to load: ")
                 vertices, edges = loadGraph(filename)
             # If the user presses the m key, print the adjacency matrix, degree matrix, and laplacian matrix
             if event.key == pygame.K_m:
