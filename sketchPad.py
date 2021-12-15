@@ -394,11 +394,37 @@ def loadGraph(filename):
                 edges.append(e)
     return vertices, edges
 
+# Function to recolor the vertices using the min colors possible,
+# without adj vertices having the same color [DONE]
+    # Implements the Welsh-Powell algorithm 
+def recolorGraph(vertices, edges):
+    degreeMatrix = getDegreeMatrix(vertices, edges)
+    colorMatrix = [[0 for i in range(len(vertices))] for j in range(len(vertices))]
+    for i in range(len(vertices)):
+        for j in range(len(vertices)):
+            colorMatrix[i][j] = degreeMatrix[i][j] + 1
+    for i in range(len(vertices)):
+        for j in range(len(vertices)):
+            if colorMatrix[i][j] == 0:
+                colorMatrix[i][j] = colorMatrix[j][i]
+    for i in range(len(vertices)):
+        for j in range(len(vertices)):
+            if colorMatrix[i][j] == 0:
+                colorMatrix[i][j] = colorMatrix[j][i]
+    for i in range(len(vertices)):
+        for j in range(len(vertices)):
+            if colorMatrix[i][j] == 0:
+                colorMatrix[i][j] = colorMatrix[j][i]
+    return colorMatrix
+
+
 isRunning = True
 done = False
 font = pygame.font.SysFont("arial", 20)
 # A list of 7 colors
-colors = [(155,0,0), (0, 155, 0), (0, 0, 155), (155, 155, 0), (155, 0, 155), (0, 155, 155), (155, 155, 155)]
+colors = [(155,0,0), (0, 155, 0), (0, 0, 155), (155, 155, 0), (155, 0, 155), (0, 155, 155), (155, 155, 155),
+            (225, 225, 225), (255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 0), (0,255,255), (255,0,255),
+            (55,0,0), (0,55,0), (0,0,55), (55,55,0), (55,0,55), (0,55,55), (55,55,55)]
 currColor = 0
 # List of vertices
 vertices = []
@@ -415,7 +441,7 @@ componentsList = []
 
 #vertices, edges = generateGrid(3)
 #vertices, edges = generateCycle(8)
-#ertices, edges = generateStar(7)
+vertices, edges = generateStar(7)
 #vertices, edges = generateComplete(6)
 #vertices, edges = generateComplete(5) #Pentagram
 # Main loop
@@ -536,6 +562,11 @@ while not done:
                     if currColor >= len(colors):
                         currColor = 0
                     selection.color = colors[currColor]
+            # If the up arrow key is pressed, recolor the graph
+            elif event.key == pygame.K_UP:
+                ret = recolorGraph(vertices, edges)
+                for i in range(len(ret)):
+                    vertices[i].color = colors[ret[i][i]]
         elif event.type == pygame.MOUSEMOTION and pygame.mouse.get_pressed()[0] == 1:
             # If the user is dragging a vertex, this moves the vertex
             if isinstance(selection, Vertex):
