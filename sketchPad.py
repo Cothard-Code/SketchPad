@@ -21,7 +21,6 @@ class Vertex:
         self.r = r
         self.selected = False
         self.color = colors[currColor]
-        self.connections = []
         self.draw()
 
     def draw(self):
@@ -36,18 +35,16 @@ class Vertex:
     def contains(self, x, y):
         return math.sqrt((self.x - x)**2 + (self.y - y)**2) <= self.r
 
-    def connect(self, other):
-        self.connections.append(other)
-        other.connections.append(self)
-
     def __repr__(self):
-        return "Vertex at ({}, {})".format(self.x, self.y)
+        return "V{}".format(self.ID)
 
 # Class to represent an edge
 class Edge:
     def __init__(self, v1, v2):
         self.v1 = v1
         self.v2 = v2
+        # self.ID is composed of the IDs of the vertices from smallest to largest
+        self.ID = "{} {}".format(min(v1.ID, v2.ID), max(v1.ID, v2.ID))
         self.width = 8
         self.selected = False
         # self.isLoop is true if self.v1 == self.v2
@@ -79,107 +76,55 @@ class Edge:
 
     def __repr__(self):
         return "Edge between {} and {}".format(self.v1, self.v2)
-""" 
-# A similar class to Edge but it uses arcs instead of lines
-class Arc:
-    def __init__(self, v1, v2):
-        self.v1 = v1
-        self.v1.ID = v1.ID
-        self.v2 = v2
-        self.v2.ID = v2.ID
-        self.width = 8
-        self.selected = False
-        self.draw()
 
-    # Draw the arc using the midpoint algorithm
-    def draw(self):
-        # Update v1 and v2 from the vertices
-        self.v1 = vertices[self.v1.ID]
-        self.v2 = vertices[self.v2.ID]
-        if self.v1.x == self.v2.x:
-            x = self.v1.x
-            y = self.v1.y + (self.v2.y - self.v1.y) / 2
-            pygame.draw.arc(screen, (155,155,155), (x - self.width, y - self.width, self.width * 2, self.width * 2), 0, math.pi, self.width)
-        elif self.v1.y == self.v2.y:
-            x = self.v1.x + (self.v2.x - self.v1.x) / 2
-            y = self.v1.y
-            pygame.draw.arc(screen, (155,155,155), (x - self.width, y - self.width, self.width * 2, self.width * 2), math.pi / 2, math.pi * 3 / 2, self.width)
-        else:
-            # Calculate the midpoint of the edge
-            x = (self.v1.x + self.v2.x) / 2
-            y = (self.v1.y + self.v2.y) / 2
-            # Calculate the slope
-            m = (self.v2.y - self.v1.y) / (self.v2.x - self.v1.x)
-            # Calculate the angle of the slope
-            angle = math.atan(m)
-            # Calculate the length of the arc
-            length = math.sqrt((self.v2.x - self.v1.x)**2 + (self.v2.y - self.v1.y)**2)
-            # Draw the arc
-            pygame.draw.arc(screen, (155,155,155), (x - length/2 - self.width, y - length/2 - self.width, length + self.width * 2, length + self.width * 2), angle, angle + math.pi, self.width)
-
-
-    def contains(self, x, y):
-        # Check if the point is within the arc
-        m = (self.v2.y - self.v1.y) / (self.v2.x - self.v1.x)
-        b = self.v1.y - m * self.v1.x
-        y_intercept = m * x + b
-        return abs(y_intercept - y) <= self.width
-
-    def __repr__(self):
-        return "Arc between {} and {}".format(self.v1, self.v2) """
-""" 
-# A class that represents an arc that connects a vertex to itself
-class SelfArc:
-    def __init__(self, v):
-        self.v = v
-        self.v.ID = v.ID
-        self.width = 5
-        self.selected = False
-        self.draw()
-
-    def draw(self):
-        # Update v from the vertex
-        self.v = vertices[self.v.ID]
-        x = self.v.x
-        y = self.v.y
-        # Draw the arc such that the full circle is drawn
-        pygame.draw.arc(screen, (155,155,155), (x, y, 50, 50), 0, math.pi * 2, self.width)
-
-    def contains(self, x, y):
-        # Check if the point is within the arc
-        m = 0
-        b = self.v.y
-        y_intercept = m * x + b
-        return abs(y_intercept - y) <= self.width
-
-    def __repr__(self):
-        return "SelfArc at {}".format(self.v)
- """
-
-# Function to rearrange the vertices so that they are more evenly spaced
-def arrangeVertices(vertices):
-    # Find the center of the polygon
-    center_x = sum([v.x for v in vertices]) / len(vertices)
-    center_y = sum([v.y for v in vertices]) / len(vertices)
-
-    # Rearrange the vertices
+# Function to decompose the graph into a list of connected components
+def connectedComponents(vertices, edges):
+    visited = []
+    components = []
     for v in vertices:
-        x = v.x - center_x
-        y = v.y - center_y
-        theta = math.atan2(y, x)
-        v.x = center_x + math.cos(theta) * 100
-        v.y = center_y + math.sin(theta) * 100
+        if v not in visited:
+            c = []
+            dfs(v, visited, c)
+            components.append(c)
+    return components
 
-# Return a list of all vertices that can be reached from the input vertex
-def getReachableVertices(v, reachable):
-    newReachable = reachable.copy()
-    if v.ID not in newReachable:
-        newReachable.append(v.ID)
-        for c in v.connections:
-            if c.ID not in newReachable:
-                newReachable = getReachableVertices(c, newReachable)
-    return newReachable
+def dfs(v, visited, c):
+    visited.append(v)
+    c.append(v)
+    for e in edges:
+        if e.v1 == v and e.v2 not in visited:
+            dfs(e.v2, visited, c)
+        elif e.v2 == v and e.v1 not in visited:
+            dfs(e.v1, visited, c)
 
+
+# Function to determine if the graph is bipartite
+def isBipartite(vertices, edges):
+# Set the colors of all vertices to -1
+    for v in vertices:
+        v.color = -1
+    # Set the colors of the first vertex to 0
+    vertices[0].color = (155,0,0)
+    # Set the colors of the second vertex to 1
+    vertices[1].color = (0,0,155)
+    # Set the colors of the rest of the vertices to the opposite of their neighbors' colors
+    for v in vertices[2:]:
+        for e in edges:
+            if e.v1 == v:
+                if e.v2.color == -1 and v.color == (155,0,0):
+                    e.v2.color = (0,0,155)
+                elif e.v2.color == -1 and v.color == (0,0,155):
+                    e.v2.color = (155,0,0)
+                elif e.v2.color == v.color:
+                    return False
+            elif e.v2 == v:
+                if e.v1.color == -1 and v.color == (155,0,0):
+                    e.v1.color = (0,0,155) - e.v1.color
+                elif e.v1.color == -1 and v.color == (0,0,155):
+                    e.v1.color = (155,0,0) - e.v1.color
+                elif e.v1.color == v.color:
+                    return False
+    return True
 
 
 isRunning = True
@@ -192,14 +137,12 @@ currColor = 0
 vertices = []
 # Selection
 selection = None
-# List of reachable from the selected vertex
-currReachable = []
-# Degree of the selected vertex
-currDegree = 0
 # List of edges
 edges = []
-# List of components
-components = []
+# List of connected components
+componentsList = []
+# Bipartite Flag
+bipartiteFlag = False
 
 # Main loop
 while not done:
@@ -210,45 +153,37 @@ while not done:
         #     if event.key == pygame.K_KP_ENTER or event.key == pygame.K_RETURN:
         #         arrangeVertices(vertices)
         elif event.type == pygame.KEYDOWN:
-             # If the delete key is pressed, check if the selection is a vertex or an edge, and delete it
+            # If the user presses the spacebar, then toggle bipartiteFlag
+            if event.key == pygame.K_SPACE:
+                bipartiteFlag = not bipartiteFlag
+            # If the delete key is pressed, check if the selection is a vertex or an edge, and delete it
             if event.key == pygame.K_DELETE:
-                if selection is not None:
-                    if isinstance(selection, Vertex):
-                        # Delete the vertex and all edges connected to it
-                        for vert in selection.connections:
-                            vert.connections.remove(selection)
-                        for edge in edges:
-                            if edge.v1 == selection or edge.v2 == selection:
-                                edges.remove(edge)
-                        # Change the id of all vertices that have a higher id than the selected vertex to be one less
-                        for v in vertices:
-                            if v.ID > selection.ID:
-                                v.ID -= 1
-                        vertices.remove(selection)
-                    elif isinstance(selection, Edge):
-                        # Delete the edge and clear the connections of the vertices it connects
-                        for vert in selection.v1.connections:
-                            vert.connections.remove(selection.v2)
-                        edges.remove(selection)
-                    selection = None
+                if isinstance(selection, Vertex):
+                    for edge in edges:
+                        if edge.v1 == selection or edge.v2 == selection:
+                            edges.remove(edge)
+                    # Change the id of all vertices that have a higher id than the selected vertex to be one less
+                    # May be breaky break
+                    for v in vertices:
+                        if v.ID > selection.ID:
+                            v.ID -= 1
+                    vertices.remove(selection)
+                elif isinstance(selection, Edge):
+                    # Delete the edge
+                    edges.remove(selection)
+                selection = None
             # If the L key is pressed and a vertex is selected, create a self loop
             elif event.key == pygame.K_l:
                 if isinstance(selection, Vertex):
                     # Check if the vertex already has a self loop
                     alreadyLooped = False
-                    for v in selection.connections:
-                        if v == selection:
+                    for e in edges:
+                        if e.ID == "{} {}".format(selection.ID, selection.ID):
                             alreadyLooped = True
                     if not alreadyLooped:
-                        selection.connect(selection)
                         edges.append(Edge(selection, selection))
                         selection.selected = False
                         selection = None
-            # If enter key pressed and a vertex is selected, update the reachable vertices
-            elif event.key == pygame.K_KP_ENTER or event.key == pygame.K_RETURN:
-                if isinstance(selection, Vertex):
-                    currReachable = []
-                    currReachable = getReachableVertices(selection, currReachable)
             # If the left arrow key is pressed, change the curr Color to the previous color and set the color of the selected vertex to the previous color
             # If the currColor is 0, set it to the last color in the list
             elif event.key == pygame.K_LEFT:
@@ -277,14 +212,15 @@ while not done:
                 for v in vertices:
                     if v is not selection:
                         if v.contains(event.pos[0], event.pos[1]):
-                            if selection and v.selected == False:
-                                # If the vertex is not already connected to the selected vertex, connect them
-                                if v not in selection.connections:
-                                    selection.connect(v)
-                                    edges.append(Edge(selection, v))
-                                """ selection.selected = False
-                                selection = None """
-                        #break
+                            # If there is not already an edge between the two vertices, create one
+                            alreadyConnected = False
+                            for e in edges:
+                                if (e.v1.ID == selection.ID and e.v2.ID == v.ID) or (e.v1.ID == v.ID and e.v2.ID == selection.ID):
+                                    alreadyConnected = True
+                                    break
+                            if not alreadyConnected:
+                                edges.append(Edge(selection, v))
+                                break
                 selection.selected = False
                 selection = None
             elif isinstance(selection, Edge):
@@ -320,26 +256,43 @@ while not done:
     screen.blit(eCount, (screen.get_width() - eCount.get_width() - 10, 30))
 
     # If the user has selected a vertex, display the vertex's ID as "Vertex ID = number" in the top right corner.
-    # If the user has selected an edge, display the edge's ID as "Edge between v1 and v2".
+    # If the user has selected an edge, display the edge's ID as "Edge ID = number"
     # If the user has selected nothing, display "Selection Empty."
     if isinstance(selection, Vertex):
         sDisplay = font.render("Vertex ID = {}".format(selection.ID), True, (255,255,255))
     elif isinstance(selection, Edge):
-        sDisplay = font.render("Edge between v{} and v{}".format(selection.v1.ID, selection.v2.ID), True, (255,255,255))
+        sDisplay = font.render("Vertex ID = {}".format(selection.ID), True, (255,255,255))
     else:
         sDisplay = font.render("Selection Empty", True, (255,255,255))
     screen.blit(sDisplay, (screen.get_width() - sDisplay.get_width() - 10, 50))
 
     # If the user has selected a vertex, display the degree of the selected vertex as "Degree = number" in the top right corner
     if isinstance(selection, Vertex):
-        vDeg = font.render("Degree = {}".format(len(selection.connections)), True, (255,255,255))
-        screen.blit(vDeg, (screen.get_width() - vDeg.get_width() - 10, 70))
+        # Count the number of edges connected to the vertex
+        degree = 0
+        for e in edges:
+            if e.v1 == selection or e.v2 == selection:
+                if e.v1 == selection and e.v2 == selection:
+                    degree += 2
+                else:
+                    degree += 1
+        degreeDisplay = font.render("Degree = {}".format(degree), True, (255,255,255))
+        screen.blit(degreeDisplay, (screen.get_width() - degreeDisplay.get_width() - 10, 70))
 
-    # Display the result of the getReachableVertices function in the top right corner
-    reachableCount = font.render("Reachable: {}".format(currReachable), True, (255,255,255))
-    screen.blit(reachableCount, (screen.get_width() - reachableCount.get_width() - 40, 90))
+    # Display the result of isBipartite() as "Bipartite = True/False" in the top right corner
+    if len(vertices) > 1:
+        if bipartiteFlag == True:
+            bipartiteDisplay = font.render("Bipartite = {}".format(isBipartite(vertices, edges)), True, (255,255,255))
+        else:
+            bipartiteDisplay = font.render("Bipartite = Unknown", True, (255,255,255))
+        screen.blit(bipartiteDisplay, (screen.get_width() - bipartiteDisplay.get_width() - 10, 90))
 
-    
+    # Display the result of connectedComponents function in the top left corner
+    if len(vertices) > 0:
+        componentsList = connectedComponents(vertices, edges)
+        ccCount = font.render("Connected Components: {}".format(componentsList), True, (255,255,255))
+        screen.blit(ccCount, (10, 10))
+
     pygame.display.flip()
     clock.tick(60)
 
