@@ -1,0 +1,22 @@
+1. Graphical display of vertices and edges [DONE]
+2. Input of vertices and edges [DONE]
+3. Able to reposition vertices while maintaining adjacencies [DONE]
+4. Deletion of vertices and edges [DONE]
+6. Loops [DONE]
+7. Ability to color or label vertices [DONE]
+
+1. Information about numbers of vertices and edges [DONE]
+2. Information about degrees of vertices [DONE]
+4. Information about components [DONE]
+5. Show which edges are bridges [DONE]
+6. Show whether a graph is bipartite [DONE]
+
+1. Adjacency matrix and/or Laplacian matrix info [DONE] 
+    [ADJ/DEG/LAP]
+2. Eigenvalues, eigenvectors for #1 [DONE]
+6. Algorithms for “pretty” drawings of graphs (cycles that automatically look like
+cycles; grids that look like grids; etc.) [DONE]     - Generate an NxN grid graph, Generate a cycle of size N, Star of size N
+7. Djikstra algorithm [UNTESTED]
+8. Misc.
+    - Save to file, load from file
+    

@@ -262,7 +262,7 @@ def dijkstra(vertices, edges, start, end):
     return path
 
 # Function to generate a graph from an adjacency matrix [DONE]
-def generateGraph(adjacencyMatrix):
+def generateFromAdjacency(adjacencyMatrix):
     vertices = []
     edges = []
     for i in range(len(adjacencyMatrix)):
