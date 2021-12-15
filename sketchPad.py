@@ -2,8 +2,6 @@
 
 import pygame
 import math
-#from multiprocessing import Queue
-#from queue import *
 from collections import deque
 from pygame.locals import *
 from random import randint
@@ -49,7 +47,6 @@ class Edge:
         # self.ID is composed of the IDs of the vertices from smallest to largest
         self.ID = "{} {}".format(min(v1.ID, v2.ID), max(v1.ID, v2.ID))
         self.width = 8
-        self.color = (155,155,155)
         self.selected = False
         # self.isLoop is true if self.v1 == self.v2
         self.isLoop = self.v1 == self.v2
@@ -116,6 +113,7 @@ def connectedComponents(vertices, edges):
             components.append(c)
     return components
 
+# Depth-first search to find the connected component of a vertex
 def dfs(v, visited, c):
     visited.append(v)
     c.append(v)
@@ -124,6 +122,8 @@ def dfs(v, visited, c):
             dfs(e.v2, visited, c)
         elif e.v2 == v and e.v1 not in visited:
             dfs(e.v1, visited, c)
+
+# Custom DFS function to find bridges
 def dfs2(v, o, u, visited, c):
     visited.append(v)
     c.append(v)
@@ -133,11 +133,8 @@ def dfs2(v, o, u, visited, c):
                 dfs2(e.v2, o, u, visited, c)
             elif e.v2 == v and e.v1 not in visited:
                 dfs2(e.v1, o, u, visited, c)
-        #elif e.v2 == v and e.v1 not in visited:
-         #   dfs(e.v1, visited, c)
-# Function to find the bridges in the graph
-# 1. do a dfs starting from v1 and count the number of vertices visited
-# 2. remo
+
+# Check is the edge is a bridge
 def checkBridge(e, vertices, edges):
     v = e.v1
     o = e.v1
@@ -154,32 +151,17 @@ def checkBridge(e, vertices, edges):
     else:
         return True
 
-
-
-""" def dfsBridges(v, bridges, c):
-    #add v to bridges set
-    bridges.append(v)
-    c.append(v)
-    for e in edges:
-        if e.v1 == v and e.v2 not in bridges:
-            dfs(e.v2, bridges, c)
-        elif e.v2 == v and e.v1 not in bridges:
-            dfs(e.v1, bridges, c) """
-
 # Function to determine if the graph can be divided into two partitions, and return them
 def getPartitions(vertices, edges):
     q = deque()
     partition1 = set()
     partition2 = set()
     dist = {}
-    #edges = [[e.v1.ID, e.v2.ID] for e in edges] #+ [[e.v2.ID, e.v1.ID] for e in edges]
-
     for v in vertices:
         if v not in dist:
             dist[v] = 0
             q.append(v)
             partition1.add(v)
-
             try:
                 while True:
                     v = q.pop()
@@ -211,39 +193,6 @@ def isBipartite(vertices, edges):
     if len(connectedComponents(vertices, edges)) > 1:
         return False
     return len(partition1) > 0 and len(partition2) > 0
-
-# Function to identify edges that are bridges
-# If an edge is removed, and the numComponents increases, then that edge is a bridge
-# Identify the bridges set their isBridge attribute to True
-""" def findBridges(vertices, edges):
-    bridgesI = []
-    for e in edges:
-        e.isBridge = False
-    for v in vertices:
-        v.visited = False
-    for v in vertices:
-        if not v.visited:
-            c = []
-            dfsBridges(v, bridgesI, c)
-            bridgesI.append(c)
-    print(bridgesI)
-    return bridgesI """
-""" def getBridges(vertices, edges, numComponents):
-    # Make temporary copy of the edges
-    tempEdges = edges.copy()
-    for e in tempEdges:
-        tempEdges.remove(e)
-        if numComponents < len(connectedComponents(vertices, tempEdges)):
-            e.isBridge = True
-        elif e.isBridge:
-            e.isBridge = False
-        tempEdges.append(e)
-    return tempEdges
-
-def checkBridge(tempEdges, vertices, numComponents):
-    if len(connectedComponents(vertices, tempEdges)) > numComponents:
-        return True
-    return False """
 
 isRunning = True
 done = False
@@ -280,14 +229,7 @@ while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
-        # elif event.type == pygame.KEYDOWN:
-        #     if event.key == pygame.K_KP_ENTER or event.key == pygame.K_RETURN:
-        #         arrangeVertices(vertices)
         elif event.type == pygame.KEYDOWN:
-            # If the user presses the spacebar, then toggle bipartiteFlag
-            # if event.key == pygame.K_SPACE:
-            #     bipartiteFlag = isBipartite(vertices, edges)
-            #     partitionsCurr = getPartitions(vertices, edges)
             # If the delete key is pressed, check if the selection is a vertex or an edge, and delete it
             if event.key == pygame.K_DELETE:
                 if isinstance(selection, Vertex):
@@ -295,7 +237,6 @@ while not done:
                         if edge.v1 == selection or edge.v2 == selection:
                             edges.remove(edge)
                     # Change the id of all vertices that have a higher id than the selected vertex to be one less
-                    # May be breaky break
                     for v in vertices:
                         if v.ID > selection.ID:
                             v.ID -= 1
@@ -373,8 +314,6 @@ while not done:
                     selection = vertices[-1]
                     selection.selected = True
 
-    
-
     screen.fill((0,0,0))
     for e in edges:
         e.draw()
@@ -424,7 +363,6 @@ while not done:
     screen.blit(bipartiteDisplay, (screen.get_width() - bipartiteDisplay.get_width() - 10, 90))
     screen.blit(partitionsDisplay, (screen.get_width() - partitionsDisplay.get_width() - 10, 110))
 
-
     # Display the result of connectedComponents function in the top left corner
     # and the number of CCs
     if len(vertices) > 0:
@@ -436,16 +374,6 @@ while not done:
         screen.blit(ccTitle, (10, 10))
         screen.blit(ccList, (10, 30))
         screen.blit(ccNum, (10, 50))
-
-    """ for e in edges:
-        tempEdges = edges.copy()
-        tempEdges.remove(e)
-        if checkBridge(tempEdges, vertices, numComponents):
-            e.self.color = (0, 200, 150)
-        else:
-            e.self.color = (0, 0, 0)
- """
- 
 
     pygame.display.flip()
     clock.tick(60)
