@@ -1,4 +1,8 @@
-# Click empty space to draw a new vertex, click a vertex to select it, drag to move it. When a vertex is selected, click another vertex to connect it to the selected vertex
+# Graph Theory SketchPad
+# Author: Aaron Cothard
+# Date: 12/15/2021
+# Description: This program is a graph theory sketchpad. It allows the user to create a graph,
+#              and then perform various graph theory operations on it.
 
 import pygame
 import math
@@ -13,8 +17,6 @@ pygame.init()
 screen = pygame.display.set_mode((600,600))
 clock = pygame.time.Clock()
 pygame.display.set_caption("SketchPad")
-
-
 
 # Class to represent a vertex
 class Vertex:
@@ -68,11 +70,6 @@ class Edge:
                 pygame.draw.line(screen, (0,255,200), (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width + 2)
             else:
                 pygame.draw.line(screen, (155,155,155), (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width)
-
-            # if self.isBridge:
-            #     pygame.draw.line(screen, (0,200,100), (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width)
-            # else:
-            #     pygame.draw.line(screen, self.color, (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width)
         
     def contains(self, x, y):
         # If self.isLoop, check if the point is on the circle
@@ -139,7 +136,7 @@ def dfs2(v, o, u, visited, c):
             elif e.v2 == v and e.v1 not in visited:
                 dfs2(e.v1, o, u, visited, c)
 
-# Check is the edge is a bridge
+# Check is the edge a bridge
 def checkBridge(e, vertices, edges):
     v = e.v1
     o = e.v1
@@ -384,7 +381,7 @@ edges = []
 componentsList = []
 
 # Graph Presets
-#vertices, edges = generateGrid(5)
+#vertices, edges = generateGrid(3)
 #vertices, edges = generateCycle(10)
 #vertices, edges = generateStar(5)
 # Main loop
