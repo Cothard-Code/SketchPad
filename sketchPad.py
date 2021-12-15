@@ -64,7 +64,10 @@ class Edge:
         else:
             if self.selected:
                 pygame.draw.line(screen, (255,255,255), (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width + 2)
-            pygame.draw.line(screen, self.color, (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width)
+            if self.isBridge:
+                pygame.draw.line(screen, (0,255,200), (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width + 2)
+            else:
+                pygame.draw.line(screen, (155,155,155), (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width)
 
             # if self.isBridge:
             #     pygame.draw.line(screen, (0,200,100), (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width)
@@ -92,8 +95,11 @@ class Edge:
                 y_intercept = m * x + b
                 return abs(y_intercept - y) <= self.width and x >= min(self.v1.x, self.v2.x) and x <= max(self.v1.x, self.v2.x)
 
-    def setIsBridge(self, bool):
-        self.isBridge = bool
+    def setIsBridge(self):
+        self.isBridge = True
+
+    def setIsNotBridge(self):
+        self.isBridge = False
 
     def __repr__(self):
         return "Edge between {} and {}".format(self.v1, self.v2)
@@ -118,6 +124,35 @@ def dfs(v, visited, c):
             dfs(e.v2, visited, c)
         elif e.v2 == v and e.v1 not in visited:
             dfs(e.v1, visited, c)
+def dfs2(v, o, u, visited, c):
+    visited.append(v)
+    c.append(v)
+    for e in edges:
+        if not(e.v1 == o and e.v2 == u) and not(e.v1 == u and e.v2 == 0):
+            if e.v1 == v and e.v2 not in visited:
+                dfs2(e.v2, o, u, visited, c)
+            elif e.v2 == v and e.v1 not in visited:
+                dfs2(e.v1, o, u, visited, c)
+        #elif e.v2 == v and e.v1 not in visited:
+         #   dfs(e.v1, visited, c)
+# Function to find the bridges in the graph
+# 1. do a dfs starting from v1 and count the number of vertices visited
+# 2. remo
+def checkBridge(e, vertices, edges):
+    v = e.v1
+    o = e.v1
+    u = e.v2
+    visited = []
+    c = []
+    dfs(u, visited, c)
+    firstC = len(visited)
+    visited = []
+    #edges.remove(e)
+    dfs2(v, o, u, visited, c)
+    if len(visited) == firstC:
+        return False
+    else:
+        return True
 
 
 
@@ -235,6 +270,13 @@ bridgesList = []
 
 # Main loop
 while not done:
+    for e in edges:
+        if e.isBridge:
+            e.setIsNotBridge()
+        if checkBridge(e, vertices, edges):
+            e.setIsBridge()
+        else:
+            e.setIsNotBridge()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
@@ -330,6 +372,8 @@ while not done:
                     vertices.append(Vertex(event.pos[0], event.pos[1]))
                     selection = vertices[-1]
                     selection.selected = True
+
+    
 
     screen.fill((0,0,0))
     for e in edges:
