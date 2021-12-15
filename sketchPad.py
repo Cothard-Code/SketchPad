@@ -2,6 +2,9 @@
 
 import pygame
 import math
+#from multiprocessing import Queue
+#from queue import *
+from collections import deque
 from pygame.locals import *
 from random import randint
 
@@ -76,6 +79,7 @@ class Edge:
 
     def __repr__(self):
         return "Edge between {} and {}".format(self.v1, self.v2)
+  
 
 # Function to decompose the graph into a list of connected components
 def connectedComponents(vertices, edges):
@@ -98,34 +102,51 @@ def dfs(v, visited, c):
             dfs(e.v1, visited, c)
 
 
+# Function to determine if the graph can be divided into two partitions, and return them
+def getPartitions(vertices, edges):
+    q = deque()
+    partition1 = set()
+    partition2 = set()
+    dist = {}
+    #edges = [[e.v1.ID, e.v2.ID] for e in edges] #+ [[e.v2.ID, e.v1.ID] for e in edges]
+
+    for v in vertices:
+        if v not in dist:
+            dist[v] = 0
+            q.append(v)
+            partition1.add(v)
+
+            try:
+                while True:
+                    v = q.pop()
+                    # Add all neighbors of v to the neighbors list
+                    neighbors = []
+                    for e in edges:
+                        if e.v1 == v:
+                            neighbors.append(e.v2)
+                        elif e.v2 == v:
+                            neighbors.append(e.v1)
+                    for w in neighbors:
+                        if w not in dist:
+                            dist[w] = dist[v] + 1
+                            q.append(w)
+                            if dist[w] % 2 == 0:
+                                partition1.add(w)
+                            else:
+                                partition2.add(w)
+                        else:
+                            if (dist[w] + dist[v]) % 2 == 0:
+                                return set(), set()
+            except:
+                pass
+    return partition1, partition2
+                
 # Function to determine if the graph is bipartite
 def isBipartite(vertices, edges):
-# Set the colors of all vertices to -1
-    for v in vertices:
-        v.color = -1
-    # Set the colors of the first vertex to 0
-    vertices[0].color = (155,0,0)
-    # Set the colors of the second vertex to 1
-    vertices[1].color = (0,0,155)
-    # Set the colors of the rest of the vertices to the opposite of their neighbors' colors
-    for v in vertices[2:]:
-        for e in edges:
-            if e.v1 == v:
-                if e.v2.color == -1 and v.color == (155,0,0):
-                    e.v2.color = (0,0,155)
-                elif e.v2.color == -1 and v.color == (0,0,155):
-                    e.v2.color = (155,0,0)
-                elif e.v2.color == v.color:
-                    return False
-            elif e.v2 == v:
-                if e.v1.color == -1 and v.color == (155,0,0):
-                    e.v1.color = (0,0,155) - e.v1.color
-                elif e.v1.color == -1 and v.color == (0,0,155):
-                    e.v1.color = (155,0,0) - e.v1.color
-                elif e.v1.color == v.color:
-                    return False
-    return True
-
+    partition1, partition2 = getPartitions(vertices, edges)
+    if len(connectedComponents(vertices, edges)) > 1:
+        return False
+    return len(partition1) > 0 and len(partition2) > 0
 
 isRunning = True
 done = False
@@ -141,6 +162,8 @@ selection = None
 edges = []
 # List of connected components
 componentsList = []
+# Current Partitions
+partitionsCurr = []
 # Bipartite Flag
 bipartiteFlag = False
 
@@ -154,8 +177,9 @@ while not done:
         #         arrangeVertices(vertices)
         elif event.type == pygame.KEYDOWN:
             # If the user presses the spacebar, then toggle bipartiteFlag
-            if event.key == pygame.K_SPACE:
-                bipartiteFlag = not bipartiteFlag
+            # if event.key == pygame.K_SPACE:
+            #     bipartiteFlag = isBipartite(vertices, edges)
+            #     partitionsCurr = getPartitions(vertices, edges)
             # If the delete key is pressed, check if the selection is a vertex or an edge, and delete it
             if event.key == pygame.K_DELETE:
                 if isinstance(selection, Vertex):
@@ -280,12 +304,16 @@ while not done:
         screen.blit(degreeDisplay, (screen.get_width() - degreeDisplay.get_width() - 10, 70))
 
     # Display the result of isBipartite() as "Bipartite = True/False" in the top right corner
+    # Display the result of getPartitions() as "Partitions = [list of lists]" in the top right corner
     if len(vertices) > 1:
-        if bipartiteFlag == True:
-            bipartiteDisplay = font.render("Bipartite = {}".format(isBipartite(vertices, edges)), True, (255,255,255))
-        else:
-            bipartiteDisplay = font.render("Bipartite = Unknown", True, (255,255,255))
-        screen.blit(bipartiteDisplay, (screen.get_width() - bipartiteDisplay.get_width() - 10, 90))
+        bipartiteDisplay = font.render("Bipartite = {}".format(isBipartite(vertices, edges)), True, (255,255,255))
+        partitionsDisplay = font.render("Partitions = {}".format(getPartitions(vertices, edges)), True, (255,255,255))
+    else:
+        bipartiteDisplay = font.render("Bipartite = Unknown", True, (255,255,255))
+        partitionsDisplay = font.render("Partitions = Unknown", True, (255,255,255))
+    screen.blit(bipartiteDisplay, (screen.get_width() - bipartiteDisplay.get_width() - 10, 90))
+    screen.blit(partitionsDisplay, (screen.get_width() - partitionsDisplay.get_width() - 10, 110))
+
 
     # Display the result of connectedComponents function in the top left corner
     if len(vertices) > 0:
