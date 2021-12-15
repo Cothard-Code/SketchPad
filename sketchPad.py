@@ -2,9 +2,12 @@
 
 import pygame
 import math
+import numpy as np
 from collections import deque
 from pygame.locals import *
 from random import randint
+import numpy as np
+
 
 pygame.init()
 screen = pygame.display.set_mode((600,600))
@@ -81,13 +84,15 @@ class Edge:
         else:
             # Catch divide by zero error
             # Catch the case where the line is vertical
+            if self.v1.x == self.v2.x:
+                return self.v1.x == x and (self.v1.y - y) <= self.width and (self.v2.y - y) <= self.width   
             try:
                 m = (self.v2.y - self.v1.y) / (self.v2.x - self.v1.x)
                 b = self.v1.y - m * self.v1.x
                 y_intercept = m * x + b
                 return abs(y_intercept - y) <= self.width and x >= min(self.v1.x, self.v2.x) and x <= max(self.v1.x, self.v2.x)
             except ZeroDivisionError:
-                m = (self.v2.y - self.v1.y) / (self.v2.x - self.v1.x + 0.00001)
+                m = (self.v2.y - self.v1.y) / (self.v2.x - self.v1.x + 30)
                 b = self.v1.y - m * self.v1.x
                 y_intercept = m * x + b
                 return abs(y_intercept - y) <= self.width and x >= min(self.v1.x, self.v2.x) and x <= max(self.v1.x, self.v2.x)
@@ -194,7 +199,7 @@ def isBipartite(vertices, edges):
         return False
     return len(partition1) > 0 and len(partition2) > 0
 
-# Function to produce an adjacency matrix for the graph
+# Function to produce an adjacency matrix for the graph [DONE]
 def getAdjacencyMatrix(vertices, edges):
     adjacencyMatrix = [[0 for i in range(len(vertices))] for j in range(len(vertices))]
     for e in edges:
@@ -202,7 +207,7 @@ def getAdjacencyMatrix(vertices, edges):
         adjacencyMatrix[e.v2.ID][e.v1.ID] = 1
     return adjacencyMatrix
 
-# Function to produce the degree matrix for the graph
+# Function to produce the degree matrix for the graph [DONE]
 def getDegreeMatrix(vertices, edges):
     degreeMatrix = [[0 for i in range(len(vertices))] for j in range(len(vertices))]
     for e in edges:
@@ -210,7 +215,7 @@ def getDegreeMatrix(vertices, edges):
         degreeMatrix[e.v2.ID][e.v2.ID] += 1
     return degreeMatrix
 
-# Function to produce Laplacian matrix for the graph
+# Function to produce Laplacian matrix for the graph [DONE]
 def getLaplacianMatrix(vertices, edges):
     degreeMatrix = getDegreeMatrix(vertices, edges)
     adjacencyMatrix = getAdjacencyMatrix(vertices, edges)
@@ -218,6 +223,123 @@ def getLaplacianMatrix(vertices, edges):
         for j in range(len(vertices)):
             degreeMatrix[i][j] = degreeMatrix[i][j] - adjacencyMatrix[i][j]
     return degreeMatrix
+
+# Function to produce the eigenvalues and eigenvectors of the Laplacian matrix [DONE]
+def getEigenvalues(vertices, edges):
+    laplacianMatrix = getLaplacianMatrix(vertices, edges)
+    eigenvalues, eigenvectors = np.linalg.eig(laplacianMatrix)
+    return eigenvalues, eigenvectors
+
+# Function that implements Dijkstra's algorithm to find the shortest path between two vertices [UNTESTED]
+def dijkstra(vertices, edges, start, end):
+    dist = {}
+    prev = {}
+    for v in vertices:
+        dist[v] = float('inf')
+        prev[v] = None
+    dist[start] = 0
+    q = deque()
+    q.append(start)
+    while len(q) > 0:
+        u = q.pop()
+        for e in edges:
+            if e.v1 == u and e.v2 not in dist:
+                dist[e.v2] = dist[u] + 1
+                prev[e.v2] = u
+                q.append(e.v2)
+            elif e.v2 == u and e.v1 not in dist:
+                dist[e.v1] = dist[u] + 1
+                prev[e.v1] = u
+                q.append(e.v1)
+    if dist[end] == float('inf'):
+        return []
+    path = []
+    u = end
+    while u != None:
+        path.append(u)
+        u = prev[u]
+    path.reverse()
+    return path
+
+# Function to generate a graph from an adjacency matrix [DONE]
+def generateGraph(adjacencyMatrix):
+    vertices = []
+    edges = []
+    for i in range(len(adjacencyMatrix)):
+        vertices.append(Vertex(i))
+    for i in range(len(adjacencyMatrix)):
+        for j in range(len(adjacencyMatrix)):
+            if adjacencyMatrix[i][j] == 1:
+                edges.append(Edge(vertices[i], vertices[j]))
+    return vertices, edges
+
+# Function to generate a graph that is a grid of size n x n [DONE]
+def generateGrid(n):
+    vertices = []
+    edges = []
+    for i in range(n):
+        for j in range(n):
+            v = Vertex((i*15)*n + 100, j*15*n + 100)
+            v.ID = len(vertices)
+            vertices.append(v)
+    for i in range(n):
+        for j in range(n):
+            if i < n - 1:
+                edges.append(Edge(vertices[i*n + j], vertices[(i+1)*n + j]))
+            if j < n - 1:
+                edges.append(Edge(vertices[i*n + j], vertices[i*n + j + 1]))
+    return vertices, edges
+
+# Function to generate a graph that is a cycle of size n [DONE]
+def generateCycle(n):
+    vertices = []
+    edges = []
+    for i in range(n):
+        v = Vertex(300 + (math.cos(i*2*math.pi/n)*200), 300 + (math.sin(i*2*math.pi/n)*200))
+        v.ID = len(vertices)
+        vertices.append(v)
+    for i in range(n):
+        edges.append(Edge(vertices[i], vertices[(i+1)%n]))
+    return vertices, edges
+
+# Function to generate a graph that is a star of size n [DONE]
+def generateStar(n):
+    vertices = []
+    edges = []
+    for i in range(n):
+        v = Vertex(300 + (math.cos(i*2*math.pi/n)*200), 300 + (math.sin(i*2*math.pi/n)*200))
+        v.ID = len(vertices)
+        vertices.append(v)
+    for i in range(n):
+        edges.append(Edge(vertices[i], vertices[(i+1)%n]))
+    for i in range(n):
+        edges.append(Edge(vertices[i], vertices[(i+2)%n]))
+    return vertices, edges
+
+# Function to determine if the graph is a grid structure [Not working]
+def isGrid(vertices, edges):
+    degreeMatrix = getDegreeMatrix(vertices, edges)
+    for i in range(1,len(vertices)-1):
+        if degreeMatrix[i][i] != 4:
+            return False
+    return True
+
+# Function to move vertices to the center of the grid [Just an idea]
+def beautifyGraph(vertices, edges):
+    if isGrid(vertices, edges):
+        print("Graph is a grid")
+        x = 0
+        y = 0
+        for v in vertices:
+            x += v.x
+            y += v.y
+        x /= len(vertices)
+        y /= len(vertices)
+        for v in vertices:
+            v.x -= x
+            v.y -= y
+    else:
+        print("Graph does not have an obvious structure")
 
 isRunning = True
 done = False
@@ -233,16 +355,13 @@ selection = None
 edges = []
 # List of connected components
 componentsList = []
-# Number of connected components
-numComponents = 0
-# Current Partitions
-partitionsCurr = []
-# Bipartite Flag
-bipartiteFlag = False
-# List of bridges
-bridgesList = []
 
+# Graph Presets
+#vertices, edges = generateGrid(5)
+#vertices, edges = generateCycle(10)
+#vertices, edges = generateStar(5)
 # Main loop
+
 while not done:
     for e in edges:
         if e.isBridge:
@@ -255,23 +374,38 @@ while not done:
         if event.type == pygame.QUIT:
             done = True
         elif event.type == pygame.KEYDOWN:
-            # If the user presses the m key, the adjacency matrix is printed
+            # If the user presses the m key, print the adjacency matrix, degree matrix, and laplacian matrix
             if event.key == pygame.K_m:
                 adjacencyMatrix = getAdjacencyMatrix(vertices, edges)
-                # Print the matrix with a new line after each row
+                print("Adjacency Matrix:")
                 for i in range(len(adjacencyMatrix)):
                     print(adjacencyMatrix[i])
+                print("")
+                degreeMatrix = getDegreeMatrix(vertices, edges)
+                print("Degree Matrix:")
+                for i in range(len(degreeMatrix)):
+                    print(degreeMatrix[i])
+                print("")
+                laplacianMatrix = getLaplacianMatrix(vertices, edges)
+                print("Laplacian Matrix:")
+                for i in range(len(laplacianMatrix)):
+                    print(laplacianMatrix[i])
+                print("")
+            # If the user pressed the b key, the graph is beautified [BROKEN]
+            elif event.key == pygame.K_b:
+                beautifyGraph(vertices, edges)
             # If the delete key is pressed, check if the selection is a vertex or an edge, and delete it
-            if event.key == pygame.K_DELETE:
+            elif event.key == pygame.K_DELETE:
                 if isinstance(selection, Vertex):
-                    for edge in edges:
-                        if edge.v1 == selection or edge.v2 == selection:
-                            edges.remove(edge)
+                    # For every edge, check if the vertex is in the edge and delete the edge if it is
+                    for e in edges:
+                        if e.v1 == selection or e.v2 == selection:
+                            edges.remove(e)
+                    vertices.remove(selection)
                     # Change the id of all vertices that have a higher id than the selected vertex to be one less
                     for v in vertices:
                         if v.ID > selection.ID:
                             v.ID -= 1
-                    vertices.remove(selection)
                 elif isinstance(selection, Edge):
                     # Delete the edge
                     edges.remove(selection)
@@ -365,7 +499,7 @@ while not done:
     if isinstance(selection, Vertex):
         sDisplay = font.render("Vertex ID = {}".format(selection.ID), True, (255,255,255))
     elif isinstance(selection, Edge):
-        sDisplay = font.render("Vertex ID = {}".format(selection.ID), True, (255,255,255))
+        sDisplay = font.render("Edge ID = {}".format(selection.ID), True, (255,255,255))
     else:
         sDisplay = font.render("Selection Empty", True, (255,255,255))
     screen.blit(sDisplay, (screen.get_width() - sDisplay.get_width() - 10, 50))
