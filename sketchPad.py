@@ -62,7 +62,7 @@ class Edge:
         if self.isLoop:
             if self.selected:
                 pygame.draw.circle(screen, (255,255,255), (self.v1.x, self.v1.y - 1.5*self.v1.r), 1.35*self.v1.r, math.floor(self.width/1.25 + 5))
-            pygame.draw.circle(screen, self.color, (self.v1.x, self.v1.y - 1.5*self.v1.r), 1.25*self.v1.r, math.floor(self.width/1.25))
+            pygame.draw.circle(screen, (155,155,155), (self.v1.x, self.v1.y - 1.5*self.v1.r), 1.25*self.v1.r, math.floor(self.width/1.25))
         else:
             if self.selected:
                 pygame.draw.line(screen, (255,255,255), (self.v1.x, self.v1.y), (self.v2.x, self.v2.y), self.width + 2)
@@ -192,8 +192,8 @@ def getPartitions(vertices, edges):
 # Function to determine if the graph is bipartite
 def isBipartite(vertices, edges):
     partition1, partition2 = getPartitions(vertices, edges)
-    if len(connectedComponents(vertices, edges)) > 1:
-        return False
+    #if len(connectedComponents(vertices, edges)) > 1:
+    #    return False
     return len(partition1) > 0 and len(partition2) > 0
 
 # Function to produce an adjacency matrix for the graph [DONE]
@@ -233,7 +233,7 @@ def getEigenvaluesAdj(vertices, edges):
     eigenvalues, eigenvectors = np.linalg.eig(adjacencyMatrix)
     return eigenvalues, eigenvectors
 
-# Function that implements Dijkstra's algorithm to find the shortest path between two vertices [UNTESTED]
+# Function that implements Dijkstra's algorithm to find the shortest path between two vertices, and return the path
 def dijkstra(vertices, edges, start, end):
     dist = {}
     prev = {}
@@ -242,34 +242,43 @@ def dijkstra(vertices, edges, start, end):
         prev[v] = None
     dist[start] = 0
     q = deque()
-    q.append(start)
+    for v in vertices:
+        q.append(v)
     while len(q) > 0:
-        u = q.pop()
+        u = None
+        for v in q:
+            if u == None or dist[v] < dist[u]:
+                u = v
+        q.remove(u)
         for e in edges:
-            if e.v1 == u and e.v2 not in dist:
-                dist[e.v2] = dist[u] + 1
-                prev[e.v2] = u
-                q.append(e.v2)
-            elif e.v2 == u and e.v1 not in dist:
-                dist[e.v1] = dist[u] + 1
-                prev[e.v1] = u
-                q.append(e.v1)
-    if dist[end] == float('inf'):
-        return []
+            if e.v1 == u:
+                v = e.v2
+                alt = dist[u] + 1
+                if alt < dist[v]:
+                    dist[v] = alt
+                    prev[v] = u
+            elif e.v2 == u:
+                v = e.v1
+                alt = dist[u] + 1
+                if alt < dist[v]:
+                    dist[v] = alt
+                    prev[v] = u
     path = []
-    u = end
-    while u != None:
-        path.append(u)
-        u = prev[u]
+    v = end
+    while prev[v] != None:
+        path.append(v)
+        v = prev[v]
+    path.append(start)
     path.reverse()
     return path
 
-# Function to generate a graph from an adjacency matrix [DONE]
+# Function to generate a graph from an adjacency matrix [BROKEN]
 def generateFromAdjacency(adjacencyMatrix):
     vertices = []
     edges = []
     for i in range(len(adjacencyMatrix)):
-        vertices.append(Vertex(i))
+        v = Vertex(100 + 15*i, 100 + 25*i)
+        vertices.append(v)
     for i in range(len(adjacencyMatrix)):
         for j in range(len(adjacencyMatrix)):
             if adjacencyMatrix[i][j] == 1:
@@ -282,7 +291,7 @@ def generateGrid(n):
     edges = []
     for i in range(n):
         for j in range(n):
-            v = Vertex((i*15)*n + 100, j*15*n + 100)
+            v = Vertex(150 + i*25*n, 150 + j*25*n)
             v.ID = len(vertices)
             vertices.append(v)
     for i in range(n):
@@ -401,9 +410,12 @@ edges = []
 componentsList = []
 
 # Graph Presets
+#adjMatPreset1 = [[2,1,0,0,1,0], [1,0,1,0,1,0], [0,1,0,1,0,0], [0,0,1,0,1,1], [1,1,0,1,0,0], [0,0,0,1,0,0]]
+#vertices, edges = generateFromAdjacency(adjMatPreset1)
+
 #vertices, edges = generateGrid(3)
-vertices, edges = generateCycle(6)
-#vertices, edges = generateStar(7)
+#vertices, edges = generateCycle(8)
+#ertices, edges = generateStar(7)
 #vertices, edges = generateComplete(6)
 #vertices, edges = generateComplete(5) #Pentagram
 # Main loop
@@ -463,6 +475,18 @@ while not done:
                 for i in range(len(eigenvectors)):
                     print(eigenvectors[i])
                 print("")
+            # If the user presses the j key, print the Dijkstra's algorithm
+            if event.key == pygame.K_j:
+                print("Dijkstra's Algorithm:")
+                print("   Starting Vertex:")
+                id1 = int(input())
+                start = vertices[id1]
+                print("   Ending Vertex:")
+                id2 = int(input())
+                end = vertices[id2]
+                print("Shortest Path:")
+                print(dijkstra(vertices, edges, start, end))
+                
             # If the user pressed the b key, the graph is beautified [BROKEN]
             elif event.key == pygame.K_b:
                 beautifyGraph(vertices, edges)

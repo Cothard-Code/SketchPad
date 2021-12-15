@@ -15,8 +15,10 @@
     [ADJ/DEG/LAP]
 2. Eigenvalues, eigenvectors for #1 [DONE]
 6. Algorithms for “pretty” drawings of graphs (cycles that automatically look like
-cycles; grids that look like grids; etc.) [DONE]     - Generate an NxN grid graph, Generate a cycle of size N, Star of size N
-7. Djikstra algorithm [UNTESTED]
+   cycles; grids that look like grids; etc.) [DONE]     - Grid graph of size N
+   - Cycle of size N
+   - Complete of size N
+   - Star of size N
+7. Djikstra algorithm [DONE]
 8. Misc.
     - Save to file, load from file
-    
