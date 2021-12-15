@@ -194,6 +194,15 @@ def isBipartite(vertices, edges):
         return False
     return len(partition1) > 0 and len(partition2) > 0
 
+# Function to produce an adjacency matrix for the graph
+def getAdjacencyMatrix(vertices, edges):
+    adjacencyMatrix = [[0 for i in range(len(vertices))] for j in range(len(vertices))]
+    for e in edges:
+        adjacencyMatrix[e.v1.ID][e.v2.ID] = 1
+        adjacencyMatrix[e.v2.ID][e.v1.ID] = 1
+        
+    return adjacencyMatrix
+
 isRunning = True
 done = False
 font = pygame.font.SysFont("arial", 20)
@@ -230,6 +239,12 @@ while not done:
         if event.type == pygame.QUIT:
             done = True
         elif event.type == pygame.KEYDOWN:
+            # If the user presses the m key, the adjacency matrix is printed
+            if event.key == pygame.K_m:
+                adjacencyMatrix = getAdjacencyMatrix(vertices, edges)
+                # Print the matrix with a new line after each row
+                for i in range(len(adjacencyMatrix)):
+                    print(adjacencyMatrix[i])
             # If the delete key is pressed, check if the selection is a vertex or an edge, and delete it
             if event.key == pygame.K_DELETE:
                 if isinstance(selection, Vertex):
