@@ -341,6 +341,33 @@ def beautifyGraph(vertices, edges):
     else:
         print("Graph does not have an obvious structure")
 
+# Function to save the graph to a file [DONE]
+def saveGraph(vertices, edges, filename):
+    with open(filename, 'w') as f:
+        for v in vertices:
+            f.write("v " + str(v.x) + " " + str(v.y) + "\n")
+        for e in edges:
+            f.write("e " + str(e.v1.ID) + " " + str(e.v2.ID) + "\n")
+
+# Function to load a graph from a file [DONE]
+def loadGraph(filename):
+    vertices = []
+    edges = []
+    with open(filename, 'r') as f:
+        for line in f:
+            if line[0] == 'v':
+                x = float(line.split()[1])
+                y = float(line.split()[2])
+                v = Vertex(x, y)
+                v.ID = len(vertices)
+                vertices.append(v)
+            elif line[0] == 'e':
+                v1 = vertices[int(line.split()[1])]
+                v2 = vertices[int(line.split()[2])]
+                e = Edge(v1, v2)
+                edges.append(e)
+    return vertices, edges
+
 isRunning = True
 done = False
 font = pygame.font.SysFont("arial", 20)
@@ -374,6 +401,16 @@ while not done:
         if event.type == pygame.QUIT:
             done = True
         elif event.type == pygame.KEYDOWN:
+            # if the user pressed ctrl+s, save the graph
+            if event.key == pygame.K_s and pygame.key.get_mods() & pygame.KMOD_CTRL:
+                # Prompt the user for a filename
+                filename = input("Enter a filename: ")
+                saveGraph(vertices, edges, filename)
+            # if the user pressed ctrl+o, load a graph
+            elif event.key == pygame.K_o and pygame.key.get_mods() & pygame.KMOD_CTRL:
+                # Prompt the user for a filename
+                filename = input("Enter a filename: ")
+                vertices, edges = loadGraph(filename)
             # If the user presses the m key, print the adjacency matrix, degree matrix, and laplacian matrix
             if event.key == pygame.K_m:
                 adjacencyMatrix = getAdjacencyMatrix(vertices, edges)
