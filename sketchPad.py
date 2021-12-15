@@ -200,8 +200,24 @@ def getAdjacencyMatrix(vertices, edges):
     for e in edges:
         adjacencyMatrix[e.v1.ID][e.v2.ID] = 1
         adjacencyMatrix[e.v2.ID][e.v1.ID] = 1
-        
     return adjacencyMatrix
+
+# Function to produce the degree matrix for the graph
+def getDegreeMatrix(vertices, edges):
+    degreeMatrix = [[0 for i in range(len(vertices))] for j in range(len(vertices))]
+    for e in edges:
+        degreeMatrix[e.v1.ID][e.v1.ID] += 1
+        degreeMatrix[e.v2.ID][e.v2.ID] += 1
+    return degreeMatrix
+
+# Function to produce Laplacian matrix for the graph
+def getLaplacianMatrix(vertices, edges):
+    degreeMatrix = getDegreeMatrix(vertices, edges)
+    adjacencyMatrix = getAdjacencyMatrix(vertices, edges)
+    for i in range(len(vertices)):
+        for j in range(len(vertices)):
+            degreeMatrix[i][j] = degreeMatrix[i][j] - adjacencyMatrix[i][j]
+    return degreeMatrix
 
 isRunning = True
 done = False
