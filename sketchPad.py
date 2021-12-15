@@ -222,9 +222,15 @@ def getLaplacianMatrix(vertices, edges):
     return degreeMatrix
 
 # Function to produce the eigenvalues and eigenvectors of the Laplacian matrix [DONE]
-def getEigenvalues(vertices, edges):
+def getEigenvaluesLap(vertices, edges):
     laplacianMatrix = getLaplacianMatrix(vertices, edges)
     eigenvalues, eigenvectors = np.linalg.eig(laplacianMatrix)
+    return eigenvalues, eigenvectors
+
+# Function to produce the eigenvalues and eigenvectors of the Adjacency matrix [DONE]
+def getEigenvaluesAdj(vertices, edges):
+    adjacencyMatrix = getAdjacencyMatrix(vertices, edges)
+    eigenvalues, eigenvectors = np.linalg.eig(adjacencyMatrix)
     return eigenvalues, eigenvectors
 
 # Function that implements Dijkstra's algorithm to find the shortest path between two vertices [UNTESTED]
@@ -303,14 +309,28 @@ def generateCycle(n):
 def generateStar(n):
     vertices = []
     edges = []
+    v = Vertex(300,300)
+    v.ID = 0
+    vertices.append(v)
+    for i in range(n):
+        v = Vertex(300 + (math.cos(i*2*math.pi/n)*200), 300 + (math.sin(i*2*math.pi/n)*200))
+        v.ID = len(vertices)
+        vertices.append(v)
+        edges.append(Edge(vertices[0], vertices[i+1]))
+    return vertices, edges
+
+# Function to generate a graph that is a complete graph of size n [DONE]
+def generateComplete(n):
+    vertices = []
+    edges = []
     for i in range(n):
         v = Vertex(300 + (math.cos(i*2*math.pi/n)*200), 300 + (math.sin(i*2*math.pi/n)*200))
         v.ID = len(vertices)
         vertices.append(v)
     for i in range(n):
-        edges.append(Edge(vertices[i], vertices[(i+1)%n]))
-    for i in range(n):
-        edges.append(Edge(vertices[i], vertices[(i+2)%n]))
+        for j in range(n):
+            if i != j:
+                edges.append(Edge(vertices[i], vertices[j]))
     return vertices, edges
 
 # Function to determine if the graph is a grid structure [Not working]
@@ -382,8 +402,10 @@ componentsList = []
 
 # Graph Presets
 #vertices, edges = generateGrid(3)
-#vertices, edges = generateCycle(10)
-#vertices, edges = generateStar(5)
+vertices, edges = generateCycle(6)
+#vertices, edges = generateStar(7)
+#vertices, edges = generateComplete(6)
+#vertices, edges = generateComplete(5) #Pentagram
 # Main loop
 
 while not done:
@@ -408,7 +430,7 @@ while not done:
                 # Prompt the user for a filename
                 filename = input("Enter a filename to load: ")
                 vertices, edges = loadGraph(filename)
-            # If the user presses the m key, print the adjacency matrix, degree matrix, and laplacian matrix
+            # If the user presses the m key, print the adjacency matrix, degree matrix, laplacian matrix, and the eigenvalues/vectors of Adj/Lap
             if event.key == pygame.K_m:
                 adjacencyMatrix = getAdjacencyMatrix(vertices, edges)
                 print("Adjacency Matrix:")
@@ -424,6 +446,22 @@ while not done:
                 print("Laplacian Matrix:")
                 for i in range(len(laplacianMatrix)):
                     print(laplacianMatrix[i])
+                print("")
+                eigenvalues, eigenvectors = getEigenvaluesAdj(vertices, edges)
+                print("Eigenvalues of AdjMatrix:")
+                print(eigenvalues)
+                print("")
+                print("Eigenvectors of AdjMatrix:")
+                for i in range(len(eigenvectors)):
+                    print(eigenvectors[i])
+                print("")
+                eigenvalues, eigenvectors = getEigenvaluesLap(vertices, edges)
+                print("Eigenvalues of LaplacianMatrix:")
+                print(eigenvalues)
+                print("")
+                print("Eigenvectors of LaplacianMatrix:")
+                for i in range(len(eigenvectors)):
+                    print(eigenvectors[i])
                 print("")
             # If the user pressed the b key, the graph is beautified [BROKEN]
             elif event.key == pygame.K_b:
